@@ -2,10 +2,11 @@ class node:
     def __init__(self,name=None, rt = 0, dl = 0, predecessors = None):
         self.name = name
         self.rt = rt
-        #self.ex = 0
         self.dl = dl 
         self.successors = []
         self.predecessors = list(predecessors) if predecessors else []
+        self.effrelease = None
+        self.effdeadline = None
 
         
     def addSuccessor(self,node):
@@ -53,5 +54,53 @@ for thenode in nodes.values():
     for thepredecessor in thenode.predecessors:
         nodes[thepredecessor].addSuccessor(thenode)
 
-# for name, n in nodes.items():
-#     print(name, "->", [s.name for s in n.successors])
+
+def findEffectiveTimes(nodes):
+
+    def findEffRelease(dictionary):
+
+        def dfs(keyname):
+            n = dictionary[keyname] #n=value of the dictionary
+            if n.effrelease is not None:
+                return n.effrelease
+
+            if not n.predecessors:
+                n.effrelease = n.rt
+            else:
+                preds_er = (dfs(pname) for pname in n.predecessors)
+                n.effrelease = max(n.rt, max(preds_er))
+
+            return n.effrelease
+        for keyname in dictionary:
+            dfs(keyname)
+
+    findEffRelease(nodes)
+
+    def findEffDeadline(dictionary):
+
+        def dfs(n):
+            if n.effdeadline is not None:
+                return n.effdeadline
+
+            if not n.successors:
+                n.effdeadline = n.dl
+            else:
+                successors_ed = (dfs(pname) for pname in n.successors)
+                n.effdeadline = min(n.dl, min(successors_ed))
+
+            return n.effdeadline
+        for keyname in dictionary.values():
+            dfs(keyname)
+
+    findEffDeadline(nodes)
+
+
+def printEffectiveTimes(nodes):
+        for thenode in nodes.values():
+            print(thenode.name, thenode.effrelease, thenode.effdeadline)
+        
+
+
+
+findEffectiveTimes(nodes)
+printEffectiveTimes(nodes)
