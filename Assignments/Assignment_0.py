@@ -29,7 +29,7 @@ class node:
 
 nodes = {}
 
-with open("/Volumes/Data/Codes/BPGC_Courses/S1_RTES/04_Assignment_1_Input.txt", "r") as inputfile:
+with open("/Volumes/Data/Codes/BPGC_Courses/S1_RTES/Assignments/Assignment_0_Input.txt", "r") as inputfile:
     for line in inputfile:
         words = line.strip().split(",")
         name = ''
