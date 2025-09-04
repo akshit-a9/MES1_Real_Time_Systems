@@ -5,10 +5,10 @@
 //CONFIRM THIS
 #include "xil_mmu.h"
 
-#define LED          0x41200008U
+#define LED          0x41200008
 
 // CHECK THIS
-#define SHARED_BASE  0x30000000U  
+#define SHARED_BASE   0x0AB00000  
 
 static volatile unsigned int *shared_value = (volatile unsigned int *)SHARED_BASE;
 
@@ -23,8 +23,7 @@ static void writeLED(void *p)
 
     while (1)
     {
-        unsigned int v = *shared_value; 
-        *ledAddr = (int)v;              
+        *ledAddr = *shared_value;              
     }
 }
 

@@ -7,8 +7,8 @@
 
 
 
-#define SWITCH 0x41200000U
-#define SHARED_BASE  0x30000000U
+#define SWITCH 0x41200000
+#define SHARED_BASE  0x0AB00000
 
 
 //HAVE TO CHECK MEMORY IN LAB
@@ -26,8 +26,7 @@ static void switchRead(void *p)
 
     while (1)
     {
-        unsigned int v = (unsigned int)(*swAddr);
-        *shared_value = v;
+        *shared_value = (unsigned int)(*swAddr);
     }
 }
 
