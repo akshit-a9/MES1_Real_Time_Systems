@@ -29,7 +29,7 @@ void* myFunct(void *param){
 
 	    for (int i = 0; i < num_tasks; i++) {
 	        if (global_time % (int)tasks[i].execTime == 0) {
-	            tasks[i].fun();
+	            tasks[i].fun(); //This causes that function to print
 	        }
 	    }
 
