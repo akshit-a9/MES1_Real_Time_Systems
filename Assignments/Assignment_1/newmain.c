@@ -19,9 +19,18 @@ static unsigned now = 0;  // seconds since start (time at BEGIN of current tick)
 
 // Highest-priority ready task (RM order = array order)
 static int pick_task(void) {
-    for (int i = 0; i < N; ++i)
-        if (tasks[i].ready && tasks[i].remaining > 0) return i;
-    return -1;
+    int chosen = -1;
+    unsigned best_period = 0xFFFFFFFF;  // very large
+
+    for (int i = 0; i < N; ++i) {
+        if (tasks[i].ready && tasks[i].remaining > 0) {
+            if (tasks[i].period < best_period) {
+                best_period = tasks[i].period;
+                chosen = i;
+            }
+        }
+    }
+    return chosen;
 }
 
 static void print_finish(unsigned id, unsigned finish_time_s) {
