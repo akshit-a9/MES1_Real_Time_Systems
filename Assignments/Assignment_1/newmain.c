@@ -1,8 +1,8 @@
-// main.c — RM scheduler (print at RELEASE), 1s tick; periods/WCETs in seconds
+// main.c — RM scheduler, 1s tick, print at COMPLETION, all tasks released at t=0
 #include <stdio.h>
-#include "scheduler.h"     // initScheduler, loadTimer (HW timer/ISR)
+#include "scheduler.h"     // initScheduler, loadTimer (HW timer/ISR):contentReference[oaicite:1]{index=1}
 #include "xil_printf.h"
-#include "task.h"          // extended tcb
+#include "task.h"          // tcb with: id, period, wcet, next_release, remaining, ready
 
 #define TICK_SEC 1
 #define TICK_US  1000000   // hardware API expects microseconds
@@ -15,71 +15,59 @@ static tcb tasks[] = {
 };
 static const int N = sizeof(tasks)/sizeof(tasks[0]);
 
-static unsigned now = 0;  // seconds since start
+static unsigned now = 0;  // seconds since start (time at BEGIN of current tick)
 
-static void init_tasks(void) {
-    for (int i = 0; i < N; ++i) {
-        tasks[i].next_release = tasks[i].period; // first release at its period
-        tasks[i].remaining    = 0;
-        tasks[i].ready        = 0;
-    }
-}
-
-static inline void on_release(unsigned id) {
-    xil_printf("Hello from Task %u at time %u s\n\r", id, now);
-}
-
-
-// Return index of highest-priority ready task (RM), or -1 if none
+// Highest-priority ready task (RM order = array order)
 static int pick_task(void) {
-    for (int i = 0; i < N; ++i) {
+    for (int i = 0; i < N; ++i)
         if (tasks[i].ready && tasks[i].remaining > 0) return i;
-    }
     return -1;
+}
+
+static void print_finish(unsigned id, unsigned finish_time_s) {
+    xil_printf("Hello from Task %u at time %u s\n\r", id, finish_time_s);
 }
 
 // Timer ISR callback (registered via initScheduler)
 void* rm_scheduler_cb(void *unused) {
-    now += TICK_SEC;
-
-    // 1) Releases (handle multiple pending releases robustly)
+    // 1) Release jobs at current time 'now' (ALL release at t=0 initially)
     for (int i = 0; i < N; ++i) {
         while ((int)(now - tasks[i].next_release) >= 0) {
-            // Deadline miss if a previous job hasn't finished by next release
+            // Optional: deadline miss if previous job not finished
             if (tasks[i].ready && tasks[i].remaining > 0) {
                 xil_printf("Deadline miss: Task %u at %u s\n\r", tasks[i].id, now);
             }
-            // Release new job
             tasks[i].ready     = 1;
             tasks[i].remaining = (int)tasks[i].wcet;
-            on_release(tasks[i].id);  // >>> print ON RELEASE <<<
             tasks[i].next_release += tasks[i].period;
         }
     }
 
-    // 2) Pick highest-priority ready task (shortest period first)
+    // 2) Pick RM-highest ready task
     int k = pick_task();
     if (k >= 0) {
-        // 3) Run for one tick (1 s of CPU)
+        // 3) Run for one tick (1 s). Completion occurs at END of this tick → time = now + 1
+        int will_finish = (tasks[k].remaining <= TICK_SEC);
         tasks[k].remaining -= TICK_SEC;
-        if (tasks[k].remaining <= 0) {
+        if (will_finish) {
             tasks[k].remaining = 0;
             tasks[k].ready = 0;
+            print_finish(tasks[k].id, now + TICK_SEC);
         }
     }
-    // else: idle this tick
+    // else idle this tick
 
-    // 4) Program next tick (hardware wants microseconds)
-    loadTimer(TICK_US);
+    // 4) Advance time and arm next tick
+    now += TICK_SEC;              // we advance time AFTER executing this 1s slice
+    loadTimer(TICK_US);           // program next 1 s tick (API uses microseconds):contentReference[oaicite:2]{index=2}
     return NULL;
 }
 
 scheduler myscheduler;
 
 int main(void) {
-    init_tasks();
-    // Register our callback with the provided library (do not modify it)
-    initScheduler(&myscheduler, rm_scheduler_cb, NULL);
-    loadTimer(TICK_US);  // start periodic 1s ticks
+    // All tasks are set to release at t=0 via .next_release = 0 above
+    initScheduler(&myscheduler, rm_scheduler_cb, NULL);  // library call:contentReference[oaicite:3]{index=3}
+    loadTimer(TICK_US);                                  // start periodic 1 s ticks (HW):contentReference[oaicite:4]{index=4}
     while (1) { /* idle forever */ }
 }
