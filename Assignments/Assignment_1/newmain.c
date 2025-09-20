@@ -26,8 +26,9 @@ static void init_tasks(void) {
 }
 
 static inline void on_release(unsigned id) {
-    xil_printf("Hello from Task %u\n\r", id);
+    xil_printf("Hello from Task %u at time %u s\n\r", id, now);
 }
+
 
 // Return index of highest-priority ready task (RM), or -1 if none
 static int pick_task(void) {
