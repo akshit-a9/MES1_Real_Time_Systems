@@ -1,0 +1,3 @@
+In the lab, we were told to focus on the order of scheduling in a non-preemptive way. hence, lab_task_1_non_preeptive.c is that code - with logic actually worked up by me, given sir's idea of changing the priority of the task to be scheduled. 
+
+extra_lab_1_preemptive.c is made using gpt by giving it the non-preemptive code. It is not written by me, but just wanted to know how preemptive would work, as EDF actually is preemptive. 
