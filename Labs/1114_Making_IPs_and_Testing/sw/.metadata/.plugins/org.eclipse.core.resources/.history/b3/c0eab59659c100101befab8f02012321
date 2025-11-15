@@ -1,0 +1,64 @@
+#include "xparameters.h"
+#include "sleep.h"
+#include "scheduler.h"
+
+void* myFunct(void *param){
+	xil_printf("Hello from ISR\n\r");
+	loadTimer(1000000);
+	return NULL;
+}
+
+scheduler myscheduler;
+
+int main(){
+	unsigned int* led;
+	unsigned int* slideSw;
+	unsigned int* clock;
+	//	unsigned int temp;
+	led = (unsigned int*)XPAR_AXI_GPIO_0_BASEADDR;
+	slideSw = (unsigned int*)(XPAR_AXI_GPIO_0_BASEADDR+8);
+	clock = (unsigned int*)XPAR_CLOCK_0_S00_AXI_BASEADDR;
+	//This bracket above is REALLY IMPORTANT (Otherwise it will add 8*4 = 32)
+
+//	while(1){
+//Part 1: Blinking LED's
+//		*led = 0xFF;
+//		sleep(1);
+//		*led = 0;
+//		sleep(1);
+
+//Part 2: One by One LED's
+//		*led = 0x1;
+//		sleep(1);
+//		*led = 0x3;
+//		sleep(1);
+//		*led = 0x7;
+//		sleep(1);
+//		*led = 0xF;
+//		sleep(1);
+//		*led = 0x1F;
+//		sleep(1);
+//		*led = 0x3F;
+//		sleep(1);
+//		*led = 0x7F;
+//		sleep(1);
+//		*led = 0xFF;
+//		sleep(1);
+//		*led = 0;
+//		sleep(1);
+
+//Part 3: Read from switches and write to LED's
+//		*led = *slideSw;
+
+//Part 4: Testing the clock IP
+//		xil_printf("Current time is %u\n\r", *clock);
+//		sleep(1);
+//}
+
+	initScheduler(&myscheduler,myFunct,NULL);
+	loadTimer(1000000);
+	while(1){
+		xil_printf("Current time is %u\n\r", *clock);
+	}
+
+}

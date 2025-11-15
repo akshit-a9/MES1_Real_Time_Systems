@@ -1,0 +1,56 @@
+18:37:03 **** Incremental Build of configuration Debug for project systemTest ****
+make all 
+make --no-print-directory pre-build
+a9-linaro-pre-build-step
+' '
+make --no-print-directory main-build
+'Building file: ../src/main.c'
+'Invoking: ARM v7 gcc compiler'
+arm-none-eabi-gcc -Wall -O0 -g3 -c -fmessage-length=0 -MT"src/main.o" -mcpu=cortex-a9 -mfpu=vfpv3 -mfloat-abi=hard -ID:/RTES/2025H1400069G/making_ip/sw/design_1_wrapper/export/design_1_wrapper/sw/design_1_wrapper/domain_ps7_cortexa9_0/bspinclude/include -MMD -MP -MF"src/main.d" -MT"src/main.o" -o "src/main.o" "../src/main.c"
+../src/main.c:5:2: warning: data definition has no type or storage class
+    5 |  led = (unsigned int*)XPAR_AXI_GPIO_0_BASEADDR;
+      |  ^~~
+../src/main.c:5:2: warning: type defaults to 'int' in declaration of 'led' [-Wimplicit-int]
+../src/main.c:5:8: warning: initialization of 'int' from 'unsigned int *' makes integer from pointer without a cast [-Wint-conversion]
+    5 |  led = (unsigned int*)XPAR_AXI_GPIO_0_BASEADDR;
+      |        ^
+../src/main.c:6:2: warning: data definition has no type or storage class
+    6 |  slideSw = (unsigned int*)(XPAR_AXI_GPIO_0_BASEADDR+8);
+      |  ^~~~~~~
+../src/main.c:6:2: warning: type defaults to 'int' in declaration of 'slideSw' [-Wimplicit-int]
+../src/main.c:6:12: warning: initialization of 'int' from 'unsigned int *' makes integer from pointer without a cast [-Wint-conversion]
+    6 |  slideSw = (unsigned int*)(XPAR_AXI_GPIO_0_BASEADDR+8);
+      |            ^
+../src/main.c:7:2: warning: data definition has no type or storage class
+    7 |  clock = (unsigned int*)XPAR_CLOCK_0_S00_AXI_BASEADDR;
+      |  ^~~~~
+../src/main.c:7:2: warning: type defaults to 'int' in declaration of 'clock' [-Wimplicit-int]
+../src/main.c:7:10: warning: initialization of 'int' from 'unsigned int *' makes integer from pointer without a cast [-Wint-conversion]
+    7 |  clock = (unsigned int*)XPAR_CLOCK_0_S00_AXI_BASEADDR;
+      |          ^
+../src/main.c: In function 'main':
+../src/main.c:25:16: warning: variable 'clock' set but not used [-Wunused-but-set-variable]
+   25 |  unsigned int* clock;
+      |                ^~~~~
+../src/main.c:24:16: warning: variable 'slideSw' set but not used [-Wunused-but-set-variable]
+   24 |  unsigned int* slideSw;
+      |                ^~~~~~~
+../src/main.c:23:16: warning: variable 'led' set but not used [-Wunused-but-set-variable]
+   23 |  unsigned int* led;
+      |                ^~~
+'Finished building: ../src/main.c'
+' '
+'Building target: systemTest.elf'
+'Invoking: ARM v7 gcc linker'
+arm-none-eabi-gcc -mcpu=cortex-a9 -mfpu=vfpv3 -mfloat-abi=hard -Wl,-build-id=none -specs=Xilinx.spec -Wl,-T -Wl,../src/lscript.ld -LD:/RTES/2025H1400069G/making_ip/sw/design_1_wrapper/export/design_1_wrapper/sw/design_1_wrapper/domain_ps7_cortexa9_0/bsplib/lib -o "systemTest.elf"  ./src/main.o ./src/scheduler.o   -Wl,--start-group,-lxil,-lfreertos,-lgcc,-lc,--end-group
+'Finished building target: systemTest.elf'
+' '
+'Invoking: ARM v7 Print Size'
+arm-none-eabi-size systemTest.elf  |tee "systemTest.elf.size"
+   text	   data	    bss	    dec	    hex	filename
+  64136	   3348	  88752	 156236	  2624c	systemTest.elf
+'Finished building: systemTest.elf.size'
+' '
+
+18:37:03 Build Finished (took 730ms)
+

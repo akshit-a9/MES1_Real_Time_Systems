@@ -1,0 +1,14 @@
+#include "xparameters.h"
+#include "sleep.h"
+
+int main(){
+	unsigned int* led;
+	led = (unsigned int*)XPAR_AXI_GPIO_0_BASEADDR;
+
+	while(1){
+		*led = 0xFF;
+		sleep(1);
+		*led = 0;
+		sleep(1);
+	}
+}

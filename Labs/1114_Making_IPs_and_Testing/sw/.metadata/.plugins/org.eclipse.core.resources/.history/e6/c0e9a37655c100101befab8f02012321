@@ -1,0 +1,35 @@
+#include "xparameters.h"
+#include "sleep.h"
+
+int main(){
+	unsigned int* led;
+	unsigned int* slideSw;
+	led = (unsigned int*)XPAR_AXI_GPIO_0_BASEADDR;
+	slideSw = (unsigned int*)XPAR_AXI_GPIO_0_BASEADDR;
+
+	while(1){
+
+//		*led = 0xFF;
+//		sleep(1);
+//		*led = 0;
+//		sleep(1);
+		*led = 0x1;
+		sleep(1);
+		*led = 0x3;
+		sleep(1);
+		*led = 0x7;
+		sleep(1);
+		*led = 0xF;
+		sleep(1);
+		*led = 0x1F;
+		sleep(1);
+		*led = 0x3F;
+		sleep(1);
+		*led = 0x7F;
+		sleep(1);
+		*led = 0xFF;
+		sleep(1);
+		*led = 0;
+		sleep(1);
+	}
+}
