@@ -1,0 +1,13 @@
+#-----------------------------------------------------------
+# Vivado v2021.2 (64-bit)
+# SW Build 3367213 on Tue Oct 19 02:48:09 MDT 2021
+# IP Build 3369179 on Thu Oct 21 08:25:16 MDT 2021
+# Start of session at: Mon Nov 24 00:02:00 2025
+# Process ID: 4664
+# Current directory: D:/Vivado_Projects/Assignment_3/pc/pc.runs/design_1_rtsTimer_0_0_synth_1
+# Command line: vivado.exe -log design_1_rtsTimer_0_0.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source design_1_rtsTimer_0_0.tcl
+# Log file: D:/Vivado_Projects/Assignment_3/pc/pc.runs/design_1_rtsTimer_0_0_synth_1/design_1_rtsTimer_0_0.vds
+# Journal file: D:/Vivado_Projects/Assignment_3/pc/pc.runs/design_1_rtsTimer_0_0_synth_1\vivado.jou
+# Running On: Akshit-PC, OS: Windows, CPU Frequency: 2304 MHz, CPU Physical cores: 8, Host memory: 34203 MB
+#-----------------------------------------------------------
+source design_1_rtsTimer_0_0.tcl -notrace

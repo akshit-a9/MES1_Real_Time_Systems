@@ -1,0 +1,33 @@
+01:22:37 **** Incremental Build of configuration Debug for project scheduling ****
+make all 
+make --no-print-directory pre-build
+a9-linaro-pre-build-step
+' '
+make --no-print-directory main-build
+'Building file: ../src/scheduler.c'
+'Invoking: ARM v7 gcc compiler'
+arm-none-eabi-gcc -Wall -O0 -g3 -c -fmessage-length=0 -MT"src/scheduler.o" -mcpu=cortex-a9 -mfpu=vfpv3 -mfloat-abi=hard -ID:/Vivado_Projects/Assignment_3/pc/sw/design_1_wrapper/export/design_1_wrapper/sw/design_1_wrapper/freertos10_xilinx_ps7_cortexa9_0/bspinclude/include -MMD -MP -MF"src/scheduler.d" -MT"src/scheduler.o" -o "src/scheduler.o" "../src/scheduler.c"
+../src/scheduler.c: In function 'tickCallBack':
+../src/scheduler.c:30:6: warning: unused variable 'i' [-Wunused-variable]
+   30 |  int i;
+      |      ^
+../src/scheduler.c: In function 'getResource':
+../src/scheduler.c:146:6: warning: unused variable 'i' [-Wunused-variable]
+  146 |  int i;
+      |      ^
+'Finished building: ../src/scheduler.c'
+' '
+'Building target: scheduling.elf'
+'Invoking: ARM v7 gcc linker'
+arm-none-eabi-gcc -mcpu=cortex-a9 -mfpu=vfpv3 -mfloat-abi=hard -Wl,-build-id=none -specs=Xilinx.spec -Wl,-T -Wl,../src/lscript.ld -LD:/Vivado_Projects/Assignment_3/pc/sw/design_1_wrapper/export/design_1_wrapper/sw/design_1_wrapper/freertos10_xilinx_ps7_cortexa9_0/bsplib/lib -o "scheduling.elf"  ./src/main.o ./src/scheduler.o   -Wl,--start-group,-lxil,-lfreertos,-lgcc,-lc,--end-group
+'Finished building target: scheduling.elf'
+' '
+'Invoking: ARM v7 Print Size'
+arm-none-eabi-size scheduling.elf  |tee "scheduling.elf.size"
+   text	   data	    bss	    dec	    hex	filename
+  86064	   3396	  88864	 178324	  2b894	scheduling.elf
+'Finished building: scheduling.elf.size'
+' '
+
+01:22:37 Build Finished (took 648ms)
+

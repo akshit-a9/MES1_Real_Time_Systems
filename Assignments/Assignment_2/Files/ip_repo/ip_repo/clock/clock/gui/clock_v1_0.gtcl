@@ -1,0 +1,2 @@
+# This file is automatically written.  Do not modify.
+proc gen_USERPARAMETER_DIV_VAL_VALUE {CLOCK_FREQ_HZ } {expr $CLOCK_FREQ_HZ/100}

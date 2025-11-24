@@ -1,0 +1,242 @@
+#include "xparameters.h"
+#include "xscugic.h"
+#include "xil_exception.h"
+#include "scheduler.h"
+#include <stdio.h>
+
+#define TIMERBase XPAR_RTSTIMER_0_S00_AXI_BASEADDR //Interrupt timer base address
+static XScuGic IntcInstance;                       //Xilinx GIC instance
+unsigned int* timer;                               //Interrupt timer instance pointer
+unsigned int* led;                                 //LED instance pointer
+unsigned int* slideSw;                             //Slide switch instance pointer
+unsigned int* clock;                               //Clock instance pointer
+
+extern TaskInfo taskTable[NUMTasks];
+
+
+static void timerISR();                            //Function prototype for the tick interrupt ISR
+
+RCB RCBList[] = {{LED,FALSE,-1},{SWITCH,FALSE,-1}};//resource control block table
+
+static int highestTaskIndex=-1;                    //Task table index of the task currently scheduled
+                                                   //Better not to make this global use as an attribute of scheduler
+
+//This function is called by the tick ISR and the scheduler is passed as an argument
+//This function performs the actual scheduling
+void* tickCallBack(void *schduler){
+	int ret;
+	int currTime;
+	int currTaskPriority;
+	int i;
+	scheduler *s;
+	currTime = getTime();
+//	extern TaskInfo taskTable[NUMTasks];
+
+	xil_printf("\n\rCurrent time %3u:\t",currTime); //Print the current time from the global clock IP
+
+	if(highestTaskIndex != -1){                     //If any task was scheduled in previous tick, increment its elapsed executed time
+		taskTable[highestTaskIndex].executedTime++; //Mark the task as finished if elapsed execution time is its execution time
+		if(taskTable[highestTaskIndex].executedTime >= taskTable[highestTaskIndex].execTime)
+			taskTable[highestTaskIndex].state = FINISHED;
+	}
+
+	s = (scheduler *)schduler;
+
+	schedule:   // label must come after all declarations
+
+	if(s->policy == NPCS){
+                         //Under NPCS, if any resource is being used, don't pre-empt the current task
+		for(int i=0;i<(sizeof(RCBList)/sizeof(RCBList[0]));i++){
+			if(RCBList[i].isused == TRUE){
+				taskTable[highestTaskIndex].fun(taskTable[highestTaskIndex].executedTime);
+				return NULL;
+			}
+		}
+	}
+
+	currTaskPriority = 100;
+	highestTaskIndex = -1;
+
+	//This loop detects the task with highest priority which is already ready for execution and didn't complete
+	for(int i=0;i<sizeof(taskTable)/sizeof(taskTable[0]);i++){
+		//xil_printf("i  %d  task Priority %d  release time %d  task state  %d\n\r",i,taskTable[i].priority, taskTable[i].releaseTime,  taskTable[i].state);
+		if((taskTable[i].releaseTime <= currTime) && (taskTable[i].state != FINISHED) && (taskTable[i].state != BLOCKED)){ //released and not finished state
+			if(taskTable[i].currentPriority < currTaskPriority){
+				highestTaskIndex = i;
+				currTaskPriority = taskTable[i].currentPriority;
+			}
+		}
+	}
+	if(highestTaskIndex != -1){ //If there is a ready task, schedule it
+		ret = taskTable[highestTaskIndex].fun(taskTable[highestTaskIndex].executedTime);
+		if(ret == -1){
+			taskTable[highestTaskIndex].state = BLOCKED;
+			goto schedule;
+			//Task will return -1 if it requested a resource and it was denied, in that case find another task
+		}
+
+	}
+	else
+		print("NOP");
+
+	return NULL;
+}
+
+//Scheduler initialization function
+//Initializes the interrupt controller, configures the ISR, initializes addresses of all IPs, initializes the clock and RT clock IPs
+int initScheduler(scheduler *scheduler,schedulePolicy policy){
+	int Status;
+	static XScuGic_Config *GicConfig;
+	GicConfig = XScuGic_LookupConfig(XPAR_PS7_SCUGIC_0_DEVICE_ID);
+	Status = XScuGic_CfgInitialize(&IntcInstance, GicConfig, GicConfig->CpuBaseAddress);
+	if (Status != XST_SUCCESS) {
+		print("Interrupt controller init failed\n\r");
+		return XST_FAILURE;
+	}
+	Xil_ExceptionInit();
+	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,(Xil_ExceptionHandler)XScuGic_InterruptHandler,&IntcInstance);
+	Xil_ExceptionEnable();
+	Status = XScuGic_Connect(&IntcInstance, XPAR_FABRIC_RTSTIMER_0_O_INTR_INTR,(Xil_ExceptionHandler)timerISR,(void *)scheduler); //link ISR with IRQ
+	if (Status != XST_SUCCESS) {
+		print("GIC connect failed\n\r");
+		return XST_FAILURE;
+	}
+	XScuGic_Enable(&IntcInstance, XPAR_FABRIC_RTSTIMER_0_O_INTR_INTR); //Enable interrupt controller
+	//Initialize the scheduler structure fields
+	scheduler->callback = (void *)tickCallBack;      //Call back function when tick ISR is called
+	scheduler->callbackParameter = (void *)scheduler;//the scheduler itself is passed as an argument to call back function
+	scheduler->policy = policy;                      //Scheduling policy specified by user
+
+	//Initialize IP base addresses
+	led = (unsigned int*)XPAR_AXI_GPIO_0_BASEADDR;
+	slideSw = (unsigned int*)(XPAR_AXI_GPIO_0_BASEADDR+8);
+	clock = (unsigned int*)XPAR_CLOCK_0_S00_AXI_BASEADDR;
+	timer = (unsigned int *)XPAR_RTSTIMER_0_S00_AXI_BASEADDR;
+
+	*(clock+1) = 1; //Restart the clock IP
+	*(clock+1) = 0;
+
+	loadTimer((TICK_DURATION_SEC*TIMER_CLOCK_HZ)/100); //Load the RT timer IP with count down value. This is clock dependent. 500000 for a tick of 1 sec if IP runs at 50MHz. 1000000 if IP runs at 100MHz
+	return 0;
+}
+
+
+//ISR for tick interrupt.
+void timerISR(void * schduler){
+	//print("Interrupt received\n\r");
+	timer = (unsigned int *)XPAR_RTSTIMER_0_S00_AXI_BASEADDR; //Without this line, rerunning software has issue
+	*timer = 0; //Clear interrupt
+	scheduler *s = (scheduler *)schduler;
+    if (s->callback != NULL) {
+        s->callback(s->callbackParameter);  // call the callback
+    }
+    loadTimer((TICK_DURATION_SEC*TIMER_CLOCK_HZ)/100); //reload timer for getting new interrupt
+}
+
+//Function to load the RT timer. Effective tick duration will be timerVal*100*clock period of IP
+void loadTimer(u32 timerVal){
+	*((int *)timer+1) = timerVal*100;
+	*timer = 1;
+}
+
+//Scheduler system call to allocate a resource. If a task want to use any resource, it should request
+//the scheduler through this call
+int getResource(scheduler *scheduler,resourceType resource){
+	int data;
+	int i;
+	for(int i=0;i<(sizeof(RCBList)/sizeof(RCBList[0]));i++){ //Go through resource control block table
+		if(RCBList[i].resource == resource){ //and check whether the resource requested by the task is free
+			if(RCBList[i].isused == FALSE){
+				RCBList[i].isused = TRUE;    //If free, mark it as allocated
+				RCBList[i].TaskNumber = highestTaskIndex; //Indicate which task is using it.
+				if(resource == LED){
+					*led = 1;        //If LED was requested, turn on it
+					return 0;
+				}
+				else if(resource == SWITCH){
+					data = *slideSw; //If switch was requested, return the switch position
+					return data;
+				}
+			}
+			else {
+			                // Resource is busy: Priority Inheritance if enabled
+			                if (scheduler->policy == BPI) {
+			                    int owner = RCBList[i].TaskNumber;
+			                    if (owner >= 0) {
+			                        // Lower numeric value = higher priority
+			                        if (taskTable[highestTaskIndex].currentPriority <
+			                            taskTable[owner].currentPriority) {
+
+			                            taskTable[owner].currentPriority =
+			                                taskTable[highestTaskIndex].currentPriority;
+
+
+			                        }
+			                    }
+			                }
+			                return -1;  // caller will be marked BLOCKED in tickCallBack
+			            } //If resource is not free, return -1
+		}
+	}
+	return -1; //If requested resource type is not present in RCB table, return -1
+}
+
+//This function should be called by a task to release a resource allocated to it
+//int freeResource(scheduler *scheduler,resourceType resource){
+//	for(int i=0;i<(sizeof(RCBList)/sizeof(RCBList[0]));i++){
+//		if(RCBList[i].resource == resource){
+//			if(RCBList[i].TaskNumber == highestTaskIndex){ //Make sure requested task owns the resource
+//				if(resource == LED){
+//					*led = 0;                    //If LED is released, turn it off
+//					RCBList[i].isused = FALSE;   //Mark the resource as free
+//					RCBList[i].TaskNumber = -1;
+//					return 0;
+//				}
+//			}
+//			else
+//				return -1; //If task does not own it, don't release it
+//		}
+//	}
+//	return -1; //resource type is not present in the RCB table
+//}
+
+int freeResource(scheduler *scheduler, resourceType resource){
+    int i;
+    int j;
+
+    for (i = 0; i < (int)(sizeof(RCBList)/sizeof(RCBList[0])); i++) {
+        if (RCBList[i].resource == resource) {
+            if (RCBList[i].TaskNumber == highestTaskIndex) { // owner only
+                if (resource == LED) {
+                    *led = 0;
+                    RCBList[i].isused = FALSE;
+                    RCBList[i].TaskNumber = -1;
+
+                    // Priority restoration and unblocking under PI
+                    if (scheduler->policy == BPI) {
+                        // Restore owner's priority
+                        taskTable[highestTaskIndex].currentPriority =
+                            taskTable[highestTaskIndex].basePriority;
+
+                        // Simple model: unblock all blocked tasks (all wait on same LED)
+                        for (j = 0; j < NUMTasks; j++) {
+                            if (taskTable[j].state == BLOCKED) {
+                                taskTable[j].state = WAITING;
+                            }
+                        }
+                    }
+                    return 0;
+                }
+            } else {
+                return -1; // wrong owner
+            }
+        }
+    }
+    return -1;
+}
+
+//Function to get the current time from the clock IP in terms of elapsed ticks
+//IP is designed to generate 100 ticks for every clock.
+int getTime(){
+	return *clock/(100*TICK_DURATION_SEC)-1; //1 is subtracted since the first interrupt is received at tick 1 but scheduling needs to start from 0
+}
